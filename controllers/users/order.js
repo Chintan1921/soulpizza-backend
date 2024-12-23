@@ -10,7 +10,7 @@ const {
   getImage,
   sendOrderConfirmationEmail,
 } = require("../../lib/helper");
-const dayjs = require('dayjs');
+const dayjs = require("dayjs");
 
 const placeOrder = async (req, res, next) => {
   try {
@@ -61,7 +61,7 @@ const placeOrder = async (req, res, next) => {
         throw new Error("Address does not belong to user.");
       }
 
-      address = `${req.user.name}, ${addressObj.street}, ${addressObj.city}, ${addressObj.state}, ${addressObj.country}. ${addressObj.zip}`;
+      address = `${req.user.name}, ${addressObj.street}, ${addressObj.city}, ${addressObj.state}, ${addressObj.country}. ${addressObj.zip} , ${addressObj.specialInstruction}`;
     } else if (type === "pickup") {
       if (!store.delivery_options?.pickup) {
         throw new Error("Pickup option is not available for this store.");
@@ -90,8 +90,6 @@ const placeOrder = async (req, res, next) => {
       ? new Date(new Date(defaultPickupTime).getTime() + 1 * 60 * 1000) // Adds 10 minutes if condition is met
       : defaultPickupTime;
 
-      
-
     let orderData = {
       user_id: req.user.id,
       store_id: store.id,
@@ -111,9 +109,9 @@ const placeOrder = async (req, res, next) => {
     };
 
     orderData.gluten_free_price = store?.gluten_free_price || {};
-console.log(req.user.name, "user name")
-console.log(req.user.mobile, "Phone number")
-console.log(orderData)
+    console.log(req.user.name, "user name");
+    console.log(req.user.mobile, "Phone number");
+    console.log(orderData);
     let order = await Order.create(orderData);
     console.log(order.status, "delivery timeeeee");
     cartItems.forEach((item) => {
@@ -129,6 +127,7 @@ console.log(orderData)
           ingrediants: item?.ingrediants,
           notes: item?.notes,
           name: item.product.name,
+          createdAt: order.createdAt,
         },
         product = item.product,
         category = product?.productCategory?.name,
@@ -193,6 +192,7 @@ console.log(orderData)
       orderData,
       orderItems,
       id: order.id,
+      createdAt: order.createdAt,
     });
 
     return res.json({
@@ -279,7 +279,7 @@ const getOrders = async (req, res, next) => {
 
 const deliveryTimeCheck = async (req, res, next) => {
   try {
-    const storeId = req?.body?.store_id;  // This should retrieve storeId from the request body.
+    const storeId = req?.body?.store_id; // This should retrieve storeId from the request body.
     console.log("Store ID:", storeId); // Log to confirm it is being passed correctly.
 
     const requestedPickupTime = req.body.pickupTime;
@@ -311,7 +311,6 @@ const deliveryTimeCheck = async (req, res, next) => {
     next(error);
   }
 };
-
 
 const getOrderDetail = async (req, res, next) => {
   try {

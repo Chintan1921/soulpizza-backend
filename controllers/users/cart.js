@@ -111,9 +111,9 @@ const addToCart = async (req, res, next) => {
         user_id: req.user.id,
         product_id: product.id,
         store_id: store.id,
-        size: req.body.size,
-        crust_type: req.body.crust_type,
-        gluten_free: req.body.gluten_free,
+        size: req.body.size || null,
+        crust_type: req.body.crust_type || null,
+        gluten_free: req.body.gluten_free || null,
       },
     });
 

@@ -43,6 +43,7 @@ const CartItem = sequelize.define(
     size: {
       type: DataTypes.ENUM("small", "large"),
       allowNull: true,
+     
     },
     gluten_free: {
       type: DataTypes.BOOLEAN,

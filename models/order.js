@@ -31,7 +31,10 @@ const Order = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-   
+    payment_type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     address: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -49,6 +52,10 @@ const Order = sequelize.define(
       allowNull: true,
     },
     pickup_time: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    createdAt: {
       type: DataTypes.DATE,
       allowNull: true,
     },
