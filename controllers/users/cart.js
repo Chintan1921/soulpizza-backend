@@ -401,7 +401,6 @@ const getCartItems = async (req, res, next) => {
         category = product?.productCategory?.name,
         unitPrice = 0,
         price;
-
       if (product.image) {
         item.product.image = await getImage(
           process.env.AWS_BUCKET_NAME,
