@@ -1,0 +1,11 @@
+{
+    "development": {
+        "dialect": "postgres",
+        "port": 5432,
+        "host": "restorejuly.comdnvubpbyz.ap-southeast-2.rds.amazonaws.com",
+        "database": "soulpizza_prod",
+        "username": "postgres",
+        "password": "t0ISqLXRPtojHFCVVPx4",
+        "protocol": "postgres"    
+    }
+}
