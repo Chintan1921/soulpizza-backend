@@ -31,6 +31,10 @@ const Order = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    payment_type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     address: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -51,12 +55,20 @@ const Order = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     tax: {
       type: DataTypes.FLOAT,
       allowNull: true,
     },
     delivery_charge: {
       type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    discount: {
+      type: DataTypes.JSON,
       allowNull: true,
     },
     gluten_free_price: {

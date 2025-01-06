@@ -48,6 +48,10 @@ const CartItem = sequelize.define(
       type: DataTypes.BOOLEAN,
       allowNull: true,
     },
+    instruction: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     ingrediants: {
       type: DataTypes.JSON,
       allowNull: true,
@@ -60,6 +64,16 @@ const CartItem = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    comboDeal: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: true,
+    },
+    comboItems: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      defaultValue: [],
+      allowNull: true,
+    },
   },
   {
     timestamps: true,
@@ -70,5 +84,18 @@ const CartItem = sequelize.define(
 CartItem.belongsTo(User, { foreignKey: "user_id", as: "user" });
 CartItem.belongsTo(Product, { foreignKey: "product_id", as: "product" });
 CartItem.belongsTo(Store, { foreignKey: "store_id", as: "store" });
+
+CartItem.belongsToMany(Product, {
+  through: "CartItemProducts",
+  foreignKey: "cart_item_id",
+  otherKey: "product_id",
+  as: "comboProducts",
+});
+Product.belongsToMany(CartItem, {
+  through: "CartItemProducts",
+  foreignKey: "product_id",
+  otherKey: "cart_item_id",
+  as: "includedInCarts",
+});
 
 module.exports = CartItem;

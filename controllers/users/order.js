@@ -5,7 +5,12 @@ const Address = require("../../models/address");
 const OrderItem = require("../../models/orderItem");
 const Ingrediant = require("../../models/ingrediant");
 const ProductIngrediant = require("../../models/productIngrediant");
-const { getOffsetAndLimit, getImage, sendOrderConfirmationEmail } = require("../../lib/helper");
+const {
+  getOffsetAndLimit,
+  getImage,
+  sendOrderConfirmationEmail,
+} = require("../../lib/helper");
+const dayjs = require("dayjs");
 
 const placeOrder = async (req, res, next) => {
   try {
@@ -14,7 +19,7 @@ const placeOrder = async (req, res, next) => {
       total = 0,
       orderItems = [];
 
-    const { type } = req.body;
+    const { type, discount, pickup_time, delivery_time } = req.body;
     const cartItems = await CartItem.findAll({
       include: [
         "store",
@@ -56,30 +61,59 @@ const placeOrder = async (req, res, next) => {
         throw new Error("Address does not belong to user.");
       }
 
-      address = `${req.user.name}, ${addressObj.street}, ${addressObj.city}, ${addressObj.state}, ${addressObj.country}. ${addressObj.zip}`;
+      address = `${req.user.name}, ${addressObj.street}, ${addressObj.city}, ${addressObj.state}, ${addressObj.country}. ${addressObj.zip} , ${addressObj.specialInstruction}`;
     } else if (type === "pickup") {
       if (!store.delivery_options?.pickup) {
         throw new Error("Pickup option is not available for this store.");
       }
     }
     const currentDate = new Date();
-    const defaultPickupTime = new Date(currentDate.getTime() + 25 * 60 * 1000);
+    const defaultPickupTime = req?.body?.pickup_time;
+    console.log(req.body);
+    const recentOrders = await Order.findAll({
+      where: { store_id: req.body?.store_id },
+      order: [["createdAt", "DESC"]],
+      limit: 3,
+    });
+
+    // Only add time if there are at least three "in-progress" orders
+    const shouldAddTime =
+      recentOrders.length === 3 &&
+      recentOrders.every((order) => order.status === "in-progress");
+    // Adjust the pickup time if needed
+    const finalPickupTime = shouldAddTime
+      ? new Date(new Date(pickup_time).getTime() + 1 * 60 * 1000) // Adds 10 minutes if the last three are "in-progress"
+      : pickup_time;
+    console.log(shouldAddTime, "should time");
+
+    const adjustedDefaultPickupTime = shouldAddTime
+      ? new Date(new Date(defaultPickupTime).getTime() + 1 * 60 * 1000) // Adds 10 minutes if condition is met
+      : defaultPickupTime;
 
     let orderData = {
       user_id: req.user.id,
       store_id: store.id,
       customer_name: req.user.name,
+      customer_phone: req.user.mobile,
       address,
       status: "in-progress",
       type,
-      pickup_time: type === "pickup" ? req?.body?.pickup_time : defaultPickupTime,
+      // pickup_time: type === "pickup" ? req?.body?.pickup_time : defaultPickupTime,
+      // pickup_time: type === "pickup" ? finalPickupTime : defaultPickupTime,
+      pickup_time:
+        type === "pickup" ? finalPickupTime : adjustedDefaultPickupTime,
+
       delivery_charge: type === "delivery" ? store.delivery_charge : null,
+      discount,
+      payment_type: req.body.payment_type,
     };
 
     orderData.gluten_free_price = store?.gluten_free_price || {};
-
+    console.log(req.user.name, "user name");
+    console.log(req.user.mobile, "Phone number");
+    console.log(orderData);
     let order = await Order.create(orderData);
-
+    console.log(order.status, "delivery timeeeee");
     cartItems.forEach((item) => {
       let itemData = {
           store_id: store.id,
@@ -92,7 +126,8 @@ const placeOrder = async (req, res, next) => {
           quantity: item?.quantity,
           ingrediants: item?.ingrediants,
           notes: item?.notes,
-          name:item.product.name
+          name: item.product.name,
+          createdAt: order.createdAt,
         },
         product = item.product,
         category = product?.productCategory?.name,
@@ -147,19 +182,28 @@ const placeOrder = async (req, res, next) => {
       orderItems.push(itemData);
     });
     await OrderItem.bulkCreate(orderItems);
-    await CartItem.destroy({
-      where: { user_id: req.user.id },
-    });
+    // await CartItem.destroy({
+    //   where: { user_id: req.user.id },
+    // });
     orderData.amount = total;
     orderData.tax = total - total / ((store.tax + 100) / 100);
     await order.update(orderData);
-    await sendOrderConfirmationEmail(req.user.email, 'Order Confirmation', {orderData , orderItems, id:order.id});
+    await sendOrderConfirmationEmail(req.user.email, "Order Confirmation", {
+      orderData,
+      orderItems,
+      id: order.id,
+      createdAt: order.createdAt,
+    });
 
     return res.json({
       success: true,
-      data: { order: { ...orderData, orderItems } },
+      data: {
+        order: { ...orderData, orderItems },
+        adjustedPickupTime: finalPickupTime,
+      },
     });
   } catch (error) {
+    console.error(error);
     next(error);
   }
 };
@@ -233,6 +277,41 @@ const getOrders = async (req, res, next) => {
   }
 };
 
+const deliveryTimeCheck = async (req, res, next) => {
+  try {
+    const storeId = req?.body?.store_id; // This should retrieve storeId from the request body.
+    console.log("Store ID:", storeId); // Log to confirm it is being passed correctly.
+
+    const requestedPickupTime = req.body.pickupTime;
+
+    // Fetch recent orders to check the store's current status
+    const recentOrders = await Order.findAll({
+      where: { store_id: storeId },
+      order: [["createdAt", "DESC"]],
+      limit: 3,
+    });
+
+    // Check if store is busy by verifying if the last three orders are "in-progress"
+    const shouldAddTime =
+      recentOrders.length === 3 &&
+      recentOrders.every((order) => order.status === "in-progress");
+
+    // Calculate the adjusted pickup time based on store status
+    const adjustedPickupTime = shouldAddTime
+      ? new Date(new Date(requestedPickupTime).getTime() + 1 * 60 * 1000)
+      : requestedPickupTime;
+
+    res.json({
+      success: true,
+      adjustedPickupTime,
+      isBusy: shouldAddTime,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
 const getOrderDetail = async (req, res, next) => {
   try {
     const order = await Order.findByPk(req.params.orderId, {
@@ -281,4 +360,5 @@ module.exports = {
   placeOrder,
   getOrders,
   getOrderDetail,
+  deliveryTimeCheck,
 };

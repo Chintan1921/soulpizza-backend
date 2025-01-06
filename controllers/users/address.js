@@ -44,6 +44,7 @@ const addAddress = async (req, res, next) => {
       ...req.body,
       user_id: req.user.id,
       is_default: true,
+      specialInstruction: req.body.specialInstruction ?? null,
     });
 
     return res.json({
@@ -74,6 +75,7 @@ const updateAddress = async (req, res, next) => {
     address.zip = req.body.zip ?? address.zip;
     address.country = req.body.country ?? address.country;
     address.is_default = req.body.is_default ?? address.is_default;
+    address.specialInstruction = req.body.specialInstruction ?? address.specialInstruction;
 
     await address.save();
 

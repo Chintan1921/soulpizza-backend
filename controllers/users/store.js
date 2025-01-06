@@ -39,7 +39,10 @@ const getStores = async (req, res, next) => {
     if (city && country) {
       where.city = { [Op.eq]: city };
       where.country = { [Op.eq]: country };
+
     }
+  where.status = "active";
+
     let { rows: stores, count: total } = await Store.findAndCountAll({
       attributes: { exclude: ["password"] },
       where,

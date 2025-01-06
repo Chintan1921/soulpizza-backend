@@ -1,7 +1,7 @@
 const Order = require("../../models/order");
 const { getOffsetAndLimit } = require("../../lib/helper");
 const { Op } = require("sequelize");
-const moment = require('moment');
+const moment = require("moment");
 
 const OrderItem = require("../../models/orderItem");
 const Product = require("../../models/product");
@@ -127,10 +127,10 @@ const updatePickupTime = async (req, res, next) => {
     }
 
     // Add the additional time (in minutes) to the current pickup time
-    const updatedPickupTime = currentPickupTime.add(additionalTime, 'minutes');
+    const updatedPickupTime = currentPickupTime.add(additionalTime, "minutes");
 
     // Update the order's pickup_time with the new time
-    order.pickup_time = updatedPickupTime.format('YYYY-MM-DD HH:mm:ss.SSSZ'); // Adjust formatting if needed
+    order.pickup_time = updatedPickupTime.format("YYYY-MM-DD HH:mm:ss.SSSZ"); // Adjust formatting if needed
 
     // Save the updated order
     await order.save();
@@ -145,15 +145,14 @@ const updatePickupTime = async (req, res, next) => {
   }
 };
 
-
 const getNewOrders = async (req, res, next) => {
   try {
     const { offset, limit, page } = getOffsetAndLimit(req?.query);
 
     const where = {
       is_printed: false,
-      status: 'in-progress',
-      store_id: req.user.id
+      status: "in-progress",
+      store_id: req.user.id,
     };
 
     const { rows: orders, count: total } = await Order.findAndCountAll({
@@ -194,7 +193,7 @@ const getNewOrders = async (req, res, next) => {
       return order;
     });
 
-    res.send({ success: true, msg: "New Orders", data: updatedOrders});
+    res.send({ success: true, msg: "New Orders", data: updatedOrders });
     return;
   } catch (error) {
     next(error);
@@ -246,5 +245,5 @@ module.exports = {
   getOrderDetail,
   updateOrder,
   getNewOrders,
-  updatePickupTime
+  updatePickupTime,
 };

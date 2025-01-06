@@ -11,6 +11,7 @@ const menuController = require("../admin/menu");
 const favoriteController = require("./favorite");
 const contactUsController = require("./contactUs");
 const billingController = require("./billing");
+const comboDealController = require("./comboDealController");
 
 const validator = require("./validator");
 
@@ -28,6 +29,11 @@ router.get(
   "/store/:id/products/:storeCategoryId",
   storeController.getEnabledProducts
 );
+
+// router.get("/combo-deals", comboDealController.getComboDeals);
+// router.post("/combo-deals", comboDealController.createComboDeal);
+// router.patch("/combo-deals/:id", comboDealController.updateComboDeal);
+// router.delete("/combo-deals/:id", comboDealController.deleteComboDeal);
 
 router.get("/product", productController.getProduct);
 router.get("/product/:id", productController.getProductById);
@@ -50,12 +56,14 @@ router.post("/cart", cartController.addToCart);
 router.patch("/cart/:id", cartController.editCart);
 router.delete("/cart/all", cartController.emptyCart);
 router.delete("/cart/:id", cartController.deleteCart);
+router.post("/combo-deals", comboDealController.addToCartComboDeal);
 
+router.post("/order/delivery-status", orderController.deliveryTimeCheck);
 router.get("/order", orderController.getOrders);
 router.get("/order/:orderId", orderController.getOrderDetail);
 router.post("/order", orderController.placeOrder);
 router.post("/checkout", billingController.billing);
-
+router.post("/check-coupon", billingController.validateCoupon);
 router.get("/address", addressController.getAddresses);
 router.get("/address/:id", addressController.getAddressById);
 router.patch("/address/:id", addressController.updateAddress);
@@ -66,6 +74,6 @@ router.get("/favorite", favoriteController.getFavorite);
 router.post("/favorite", favoriteController.addFavorite);
 router.delete("/favorite/:storeProductId", favoriteController.cancelFavorite);
 
-router.post("/contactUs", contactUsController.contactUsEmail );
+router.post("/contactUs", contactUsController.contactUsEmail);
 
 module.exports = router;
