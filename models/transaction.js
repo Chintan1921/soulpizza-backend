@@ -6,12 +6,12 @@ const Transaction = sequelize.define(
   "Transaction",
   {
     id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-      },
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
     user_id: {
-     type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER,
       references: {
         model: User,
         key: "id",
@@ -30,7 +30,7 @@ const Transaction = sequelize.define(
     currency: {
       type: DataTypes.STRING(3),
       allowNull: false,
-      defaultValue: "usd", // Default currency is USD
+      defaultValue: "nzd", // Default currency is USD
     },
     status: {
       type: DataTypes.ENUM("pending", "succeeded", "failed", "refunded"),
@@ -52,7 +52,7 @@ const Transaction = sequelize.define(
   },
   {
     timestamps: true, // Adds `createdAt` and `updatedAt` columns automatically
-    paranoid: true,   // Adds a `deletedAt` column for soft deletes
+    paranoid: true, // Adds a `deletedAt` column for soft deletes
   }
 );
 
