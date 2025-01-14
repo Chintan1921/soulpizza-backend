@@ -47,16 +47,24 @@ const getOrders = async (req, res, next) => {
 
     const updatedOrders = orders.map((order) => {
       order.orderItems = order.orderItems.map((orderItem) => {
+        orderItem.dataValues.comboDealItems = [];
         orderItem.dataValues.requiredIngrediants = [];
         orderItem.dataValues.customIngrediants = [];
 
-        orderItem.product.ingrediants.forEach((ingrediant) => {
+        orderItem.product.ingrediants.forEach(async (ingrediant) => {
           if (orderItem?.ingrediants?.required.includes(ingrediant.id)) {
             orderItem.dataValues.requiredIngrediants.push(ingrediant);
           }
 
           if (orderItem?.ingrediants?.custom.includes(ingrediant.id)) {
             orderItem.dataValues.customIngrediants.push(ingrediant);
+          }
+
+          if (orderItem?.comboItems && orderItem?.comboItems?.length > 0) {
+            const comboProducts = await Product.findAll({
+              where: { id: orderItem?.comboItems },
+            });
+            orderItem.dataValues.comboDealItems = [...comboProducts];
           }
         });
       });

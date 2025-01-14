@@ -8,6 +8,7 @@ const {
   createDiscount,
 } = require("../../lib/helper");
 const couponCode = "SOULPIZZA";
+
 const billing = async (req, res, next) => {
   const { id, deliveryType, coupon } = req.body; // Get session ID
   console.log("Delivery Type", deliveryType);
@@ -97,7 +98,7 @@ const billing = async (req, res, next) => {
 
       const itemTax = await calculateTax(store.tax);
       if (premiumCount > 0) {
-        console.log("this has premium pizza", premiumCount);
+        // console.log("this has premium pizza", premiumCount);
         unitPrice += premiumCount * 2;
       }
       const itemTotal = unitPrice * item.quantity;
@@ -129,7 +130,7 @@ const billing = async (req, res, next) => {
     totalTax = totalAmount - totalAmount / ((store.tax + 100) / 100);
     // totalAmount += totalTax;
 
-    console.log(totalTax, totalAmount, store.tax, ">>>>>>>>>");
+    // console.log(totalTax, totalAmount, store.tax, ">>>>>>>>>");
 
     // lineItems.push({
     //   price_data: {
