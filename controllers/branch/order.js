@@ -45,34 +45,55 @@ const getOrders = async (req, res, next) => {
       order: [["updatedAt", "DESC"]],
     });
 
-    const updatedOrders = orders.map((order) => {
-      order.orderItems = order.orderItems.map((orderItem) => {
-        orderItem.dataValues.comboDealItems = [];
-        orderItem.dataValues.requiredIngrediants = [];
-        orderItem.dataValues.customIngrediants = [];
+    const updatedOrders = await Promise.all(
+      orders.map(async (order) => {
+        // Wait for all orderItems to be processed
+        order.orderItems = await Promise.all(
+          order.orderItems.map(async (orderItem) => {
+            // Initialize arrays
+            orderItem.dataValues.requiredIngrediants = [];
+            orderItem.dataValues.customIngrediants = [];
 
-        orderItem.product.ingrediants.forEach(async (ingrediant) => {
-          if (orderItem?.ingrediants?.required.includes(ingrediant.id)) {
-            orderItem.dataValues.requiredIngrediants.push(ingrediant);
-          }
+            // Process ingredients
+            orderItem.product.ingrediants.forEach((ingrediant) => {
+              if (orderItem?.ingrediants?.required.includes(ingrediant.id)) {
+                orderItem.dataValues.requiredIngrediants.push(ingrediant);
+              }
 
-          if (orderItem?.ingrediants?.custom.includes(ingrediant.id)) {
-            orderItem.dataValues.customIngrediants.push(ingrediant);
-          }
-
-          if (orderItem?.comboItems && orderItem?.comboItems?.length > 0) {
-            const comboProducts = await Product.findAll({
-              where: { id: orderItem?.comboItems },
+              if (orderItem?.ingrediants?.custom.includes(ingrediant.id)) {
+                orderItem.dataValues.customIngrediants.push(ingrediant);
+              }
             });
-            orderItem.dataValues.comboDealItems = [...comboProducts];
-          }
-        });
-      });
 
-      return order;
+            // Initialize combo items array
+            orderItem.dataValues.comboDealItems = [];
+
+            // Process combo items
+            if (
+              orderItem?.dataValues?.comboItems &&
+              orderItem?.dataValues?.comboItems?.length > 0
+            ) {
+              const comboProducts = await Product.findAll({
+                where: { id: orderItem?.dataValues.comboItems },
+              });
+              orderItem.dataValues.comboDealItems = comboProducts;
+            }
+
+            return orderItem; // Important: return the modified orderItem
+          })
+        );
+
+        return order; // Return the modified order
+      })
+    );
+
+    res.send({
+      success: true,
+      msg: "Orders",
+      data: updatedOrders,
+      page,
+      total,
     });
-
-    res.send({ success: true, msg: "Oders", data: updatedOrders, page, total });
     return;
   } catch (error) {
     next(error);

@@ -50,6 +50,16 @@ const Product = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+    // comboDeal: {
+    //   type: DataTypes.BOOLEAN,
+    //   defaultValue: false,
+    //   allowNull: true,
+    // },
+    // comboItems: {
+    //   type: DataTypes.ARRAY(DataTypes.INTEGER),
+    //   defaultValue: [],
+    //   allowNull: true,
+    // },
   },
   {
     timestamps: true,

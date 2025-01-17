@@ -64,6 +64,16 @@ const OrderItem = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    comboDeal: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: true,
+    },
+    comboItems: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      defaultValue: [],
+      allowNull: true,
+    },
   },
   {
     timestamps: true,
