@@ -397,123 +397,117 @@ const getCartItems = async (req, res, next) => {
     country = store.country;
 
     for (const item of cartItems) {
-      let product = item.product,
-        category = product?.productCategory?.name,
-        unitPrice = 0,
-        price;
-      if (product.image) {
-        item.product.image = await getImage(
-          process.env.AWS_BUCKET_NAME,
-          item.product.image
-        );
-      }
+      try {
+        // Validate product exists
+        if (!item.product) {
+          console.error(`Product not found for cart item: ${item.id}`);
+          continue; // Skip this item
+        }
 
-      let comboDealItems = [];
-      if (item.comboItems && item.comboItems.length > 0) {
-        // Fetch details of combo products if needed
-        const comboProducts = await Product.findAll({
-          where: { id: item.comboItems },
+        let product = item.product;
+        let category = product?.productCategory?.name;
+        let unitPrice = 0;
+        let price;
+
+        // Validate product has price array
+        if (!Array.isArray(product.price)) {
+          console.error(`Invalid price format for product: ${product.id}`);
+          continue;
+        }
+
+        // Find matching price for country
+        const priceExist = product.price.some((p) => {
+          if (p?.country === country) {
+            price = parseFloat(
+              category === "Pizza" ? p.price?.[item.size] || 0 : p.price || 0
+            );
+            return true;
+          }
+          return false;
         });
-        comboDealItems = [...comboProducts];
-      }
-      item.dataValues.comboDealItems = comboDealItems; // not working
-      // console.log(item);
-      let premiumCount = comboDealItems.filter(
-        (element) => element.dataValues.sub_category === "PREMIUM"
-      ).length;
 
-      // console.log(premiumCount);
-      //       let checkPremium = (comboDealItems) =>{
-      //         console.log(comboDealItems.dataValues.sub_category);
-      // return true
-      //       }
-
-      const priceExist = product.price.some((p) => {
-        if (p.country === country) {
-          price = parseFloat(
-            category === "Pizza" ? p.price[item.size] : p.price
-          );
-          return true;
+        if (!priceExist) {
+          console.error(`Price not found for country: ${country}, product: ${product.id}`);
+          continue;
         }
-      });
 
-      if (!priceExist) {
-        throw new Error("Product price for your country not found.");
-      }
+        unitPrice += price;
 
-      unitPrice += price;
-      // console.log("code reach");
-      if (premiumCount > 0) {
-        console.log("this has premium pizza", premiumCount);
-        unitPrice += premiumCount * 2;
-      }
-      if (category === "Pizza") {
-        // Handle gluten-free and ingredients pricing
-        if (item?.gluten_free && store?.gluten_free_price) {
-          unitPrice += parseFloat(store?.gluten_free_price[item.size] ?? 0);
-        }
-        // (Ingredient handling code remains as is)
-      }
-
-      const totalAmount = unitPrice * item.quantity;
-      itemsCount += item?.quantity;
-      item.dataValues.amount = unitPrice;
-      subtotal += totalAmount;
-
-      // Handle comboItems
-      if (item.comboDeal && item.comboItems?.length > 0) {
-        for (const combo of item.comboItems) {
-          const comboProduct = await Product.findOne({
-            where: { id: combo.product_id },
-            include: ["productCategory", "ingrediants"],
+        // Process combo items if they exist
+        if (item.comboItems?.length > 0) {
+          const comboProducts = await Product.findAll({
+            where: { 
+              id: item.comboItems,
+              // Add any other necessary conditions
+            },
+            // Add any necessary includes
           });
 
-          if (comboProduct.image) {
-            comboProduct.image = await getImage(
-              process.env.AWS_BUCKET_NAME,
-              comboProduct.image
-            );
-          }
+          if (comboProducts?.length > 0) {
+            const premiumCount = comboProducts.filter(
+              (element) => element?.sub_category === "PREMIUM"
+            ).length;
 
-          const comboPriceExist = comboProduct.price.some((p) => {
-            if (p.country === country) {
-              price = parseFloat(
-                comboProduct.productCategory.name === "Pizza"
-                  ? p.price[combo.size]
-                  : p.price
-              );
-              return true;
+            if (premiumCount > 0) {
+              unitPrice += premiumCount * 2;
             }
-          });
-
-          if (!comboPriceExist) {
-            throw new Error("Combo product price for your country not found.");
           }
-
-          let comboUnitPrice = price;
-
-          // Add gluten-free or other charges for combo items
-          if (
-            combo.gluten_free &&
-            store?.gluten_free_price &&
-            comboProduct.productCategory.name === "Pizza"
-          ) {
-            comboUnitPrice += parseFloat(
-              store?.gluten_free_price[combo.size] ?? 0
-            );
-          }
-
-          const comboAmount = comboUnitPrice * combo.quantity;
-          subtotal += comboAmount;
-          itemsCount += combo.quantity;
-
-          item.dataValues.comboItems = item.dataValues.comboItems || [];
-          item.dataValues.comboItems.push({
-            ...combo,
-            product: comboProduct,
-            amount: comboUnitPrice,
-          });
         }
+
+        // Process Pizza specific pricing
+        if (category === "Pizza") {
+          if (item?.gluten_free && store?.gluten_free_price) {
+            const glutenFreePrice = parseFloat(
+              store.gluten_free_price[item.size] ?? 0
+            );
+            if (!isNaN(glutenFreePrice)) {
+              unitPrice += glutenFreePrice;
+            }
+          }
+
+          // Process ingredients
+          if (item.ingrediants?.custom?.length > 0 && Array.isArray(product.ingrediants)) {
+            let defaultIngrediants = 0;
+            product.ingrediants.forEach((ingrediant) => {
+              if (ingrediant?.is_required) {
+                defaultIngrediants++;
+              }
+            });
+
+            const removedRequiredIngrediants = 
+              defaultIngrediants - (item.ingrediants.required?.length || 0);
+
+            if (Array.isArray(item.ingrediants.custom)) {
+              const ingrediantsToAddToTotal = item.ingrediants.custom.slice(
+                removedRequiredIngrediants,
+                item.ingrediants.custom.length
+              );
+
+              if (ingrediantsToAddToTotal.length > 0) {
+                product.ingrediants.forEach((ingrediant) => {
+                  if (ingrediant && 
+                      ingrediantsToAddToTotal.includes(ingrediant.id) && 
+                      typeof ingrediant.price === 'number') {
+                    unitPrice += ingrediant.price;
+                  }
+                });
+              }
+            }
+          }
+        }
+
+        // Calculate total for this item
+        const itemTotal = unitPrice * (item.quantity || 1);
+        subtotal += itemTotal;
+
+        // Add to cart data
+        item.dataValues.amount = unitPrice;
+
+      } catch (error) {
+        console.error('Error processing cart item:', error);
+        // Decide whether to throw or continue based on your requirements
+        // throw error; // If you want to stop the entire process
+        continue; // If you want to skip this item and continue with others
       }
     }
 
