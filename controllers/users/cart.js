@@ -401,13 +401,26 @@ const getCartItems = async (req, res, next) => {
         // Validate product exists
         if (!item.product) {
           console.error(`Product not found for cart item: ${item.id}`);
-          continue; // Skip this item
+          continue;
         }
 
         let product = item.product;
         let category = product?.productCategory?.name;
         let unitPrice = 0;
         let price;
+
+        // Handle image if it exists
+        if (product.image) {
+          try {
+            item.product.image = await getImage(
+              process.env.AWS_BUCKET_NAME,
+              item.product.image
+            );
+          } catch (imageError) {
+            console.error('Error processing product image:', imageError);
+            item.product.image = null; // or a default image URL
+          }
+        }
 
         // Validate product has price array
         if (!Array.isArray(product.price)) {
@@ -505,9 +518,7 @@ const getCartItems = async (req, res, next) => {
 
       } catch (error) {
         console.error('Error processing cart item:', error);
-        // Decide whether to throw or continue based on your requirements
-        // throw error; // If you want to stop the entire process
-        continue; // If you want to skip this item and continue with others
+        continue;
       }
     }
 
