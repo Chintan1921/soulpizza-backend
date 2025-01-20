@@ -208,15 +208,20 @@ const getNewOrders = async (req, res, next) => {
         orderItem.dataValues.requiredIngrediants = [];
         orderItem.dataValues.customIngrediants = [];
 
-        orderItem.product.ingrediants.forEach((ingrediant) => {
-          if (orderItem?.ingrediants?.required.includes(ingrediant.id)) {
-            orderItem.dataValues.requiredIngrediants.push(ingrediant);
-          }
+        // Add null checks for product and ingrediants
+        if (orderItem?.product?.ingrediants) {
+          orderItem.product.ingrediants.forEach((ingrediant) => {
+            if (orderItem?.ingrediants?.required?.includes(ingrediant.id)) {
+              orderItem.dataValues.requiredIngrediants.push(ingrediant);
+            }
 
-          if (orderItem?.ingrediants?.custom.includes(ingrediant.id)) {
-            orderItem.dataValues.customIngrediants.push(ingrediant);
-          }
-        });
+            if (orderItem?.ingrediants?.custom?.includes(ingrediant.id)) {
+              orderItem.dataValues.customIngrediants.push(ingrediant);
+            }
+          });
+        }
+        
+        return orderItem;
       });
 
       return order;
