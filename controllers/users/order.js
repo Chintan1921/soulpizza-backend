@@ -69,7 +69,7 @@ const placeOrder = async (req, res, next) => {
     }
     const currentDate = new Date();
     const defaultPickupTime = req?.body?.pickup_time;
-    console.log(req.body);
+    // console.log(req.body);
     const recentOrders = await Order.findAll({
       where: { store_id: req.body?.store_id },
       order: [["createdAt", "DESC"]],
@@ -84,7 +84,7 @@ const placeOrder = async (req, res, next) => {
     const finalPickupTime = shouldAddTime
       ? new Date(new Date(pickup_time).getTime() + 1 * 60 * 1000) // Adds 10 minutes if the last three are "in-progress"
       : pickup_time;
-    console.log(shouldAddTime, "should time");
+    // console.log(shouldAddTime, "should time");
 
     const adjustedDefaultPickupTime = shouldAddTime
       ? new Date(new Date(defaultPickupTime).getTime() + 1 * 60 * 1000) // Adds 10 minutes if condition is met
@@ -109,12 +109,13 @@ const placeOrder = async (req, res, next) => {
     };
 
     orderData.gluten_free_price = store?.gluten_free_price || {};
-    console.log(req.user.name, "user name");
-    console.log(req.user.mobile, "Phone number");
-    console.log(orderData);
+    // console.log(req.user.name, "user name");
+    // console.log(req.user.mobile, "Phone number");
+    // console.log(orderData);
     let order = await Order.create(orderData);
-    console.log(order.status, "delivery timeeeee");
-    cartItems.forEach((item) => {
+    // console.log(order.status, "delivery timeeeee");
+    // let orderItems = [];
+    for (const item of cartItems) {
       let itemData = {
           store_id: store.id,
           user_id: req.user.id,
@@ -128,11 +129,28 @@ const placeOrder = async (req, res, next) => {
           notes: item?.notes,
           name: item.product.name,
           createdAt: order.createdAt,
+          comboDeal: item?.comboItems?.length > 0 ? true : false,
+          comboItems: item?.comboItems,
         },
         product = item.product,
         category = product?.productCategory?.name,
         unitPrice = 0,
         price;
+
+      let comboDealItems = [];
+      if (item.comboItems && item.comboItems.length > 0) {
+        // Fetch details of combo products if needed
+        // console.log(item.comboItems);
+        const comboProducts = await Product.findAll({
+          where: { id: item.comboItems },
+        });
+        comboDealItems = [...comboProducts];
+      }
+      item.comboDealItems = comboDealItems;
+
+      let premiumCount = comboDealItems.filter(
+        (element) => element.sub_category === "PREMIUM"
+      ).length;
 
       const priceExist = product.price.some((p) => {
         if (p.country === country) {
@@ -148,7 +166,10 @@ const placeOrder = async (req, res, next) => {
       }
 
       unitPrice += price;
-
+      if (premiumCount > 0) {
+        // console.log("this has premium pizza", premiumCount);
+        unitPrice += premiumCount * 2;
+      }
       if (category === "Pizza") {
         if (item?.gluten_free && orderData?.gluten_free_price) {
           unitPrice += parseFloat(orderData.gluten_free_price[item.size] ?? 0);
@@ -177,17 +198,26 @@ const placeOrder = async (req, res, next) => {
           }
         }
       }
+      // console.log(unitPrice);
       total += unitPrice * item.quantity;
+      itemData.amount = unitPrice;
       itemData.price = unitPrice;
       orderItems.push(itemData);
-    });
-    await OrderItem.bulkCreate(orderItems);
+      // console.log(orderItems);
+      let savedOrder = await OrderItem.create(itemData);
+      // console.log(savedOrder);
+    }
+    // console.log("orderItems", orderItems);
+    // let savedOrderItem = await OrderItem.bulkCreate(orderItems);
+    // console.log("savedOrderItem", savedOrderItem);
     // await CartItem.destroy({
     //   where: { user_id: req.user.id },
     // });
+    console.log("total", total);
     orderData.amount = total;
     orderData.tax = total - total / ((store.tax + 100) / 100);
-    await order.update(orderData);
+    const updatesuccess = await order.update(orderData);
+    console.log("updatesuccess", updatesuccess);
     await sendOrderConfirmationEmail(req.user.email, "Order Confirmation", {
       orderData,
       orderItems,

@@ -8,6 +8,7 @@ const {
   createDiscount,
 } = require("../../lib/helper");
 const couponCode = "SOULPIZZA";
+
 const billing = async (req, res, next) => {
   const { id, deliveryType, coupon } = req.body; // Get session ID
   console.log("Delivery Type", deliveryType);
@@ -97,13 +98,13 @@ const billing = async (req, res, next) => {
 
       const itemTax = await calculateTax(store.tax);
       if (premiumCount > 0) {
-        console.log("this has premium pizza");
-        unitPrice += 2;
+        // console.log("this has premium pizza", premiumCount);
+        unitPrice += premiumCount * 2;
       }
       const itemTotal = unitPrice * item.quantity;
       lineItems.push({
         price_data: {
-          currency: "usd", // Change according to your currency
+          currency: "nzd", // Change according to your currency
           product_data: {
             name: product.name,
           },
@@ -129,7 +130,7 @@ const billing = async (req, res, next) => {
     totalTax = totalAmount - totalAmount / ((store.tax + 100) / 100);
     // totalAmount += totalTax;
 
-    console.log(totalTax, totalAmount, store.tax, ">>>>>>>>>");
+    // console.log(totalTax, totalAmount, store.tax, ">>>>>>>>>");
 
     // lineItems.push({
     //   price_data: {
@@ -155,10 +156,10 @@ const billing = async (req, res, next) => {
     console.log(lineItems[lineItems.length - 1], "Total");
 
     // Step 2: Create a transaction record in your database
-    const successUrl = `http://localhost:3000/cart?order-paced=${deliveryType}&transaction_id={CHECKOUT_SESSION_ID}`;
-    // const successUrl = `https://soulpizza.co.nz/order-paced?order_type=${deliveryType}&transaction_id={CHECKOUT_SESSION_ID}`;
-    // const cancelUrl = "https://soulpizza.co.nz/cart";
-    const cancelUrl = "http://localhost:3000/cart";
+    // const successUrl = `http://localhost:3000/cart?order-paced=${deliveryType}&transaction_id={CHECKOUT_SESSION_ID}`;
+    // const cancelUrl = "http://localhost:3000/cart";
+    const successUrl = `https://soulpizza.co.nz/order-paced?order_type=${deliveryType}&transaction_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = "https://soulpizza.co.nz/cart";
 
     // const couponData = await createDiscount(10, coupon);
     // console.log(couponData);

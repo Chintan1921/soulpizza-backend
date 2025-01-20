@@ -444,8 +444,8 @@ const getCartItems = async (req, res, next) => {
       unitPrice += price;
       // console.log("code reach");
       if (premiumCount > 0) {
-        // console.log("this has premium pizza");
-        unitPrice += 2;
+        console.log("this has premium pizza", premiumCount);
+        unitPrice += premiumCount * 2;
       }
       if (category === "Pizza") {
         // Handle gluten-free and ingredients pricing
