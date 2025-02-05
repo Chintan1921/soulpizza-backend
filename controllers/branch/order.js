@@ -252,6 +252,36 @@ const getNewOrders = async (req, res, next) => {
   }
 };
 
+const markOrderAsPrinted = async (req, res, next) => {
+  try {
+    const orderId = req.params.id;
+    
+    // Find the order
+    let order = await Order.findByPk(orderId);
+
+    if (!order) {
+      throw new Error("Invalid order id provided.");
+    }
+
+    // Verify the order belongs to the store
+    // if (order.store_id !== req.user.id) {
+    //   throw new Error("Order does not belong to your store.");
+    // }
+
+    // Update the is_printed status
+    order.is_printed = true;
+    await order.save();
+
+    return res.json({
+      success: true,
+      data: order,
+      msg: "Order marked as printed successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getOrderDetail = async (req, res, next) => {
   try {
     const order = await Order.findByPk(req.params.orderId, {
@@ -298,4 +328,5 @@ module.exports = {
   updateOrder,
   getNewOrders,
   updatePickupTime,
+  markOrderAsPrinted,
 };

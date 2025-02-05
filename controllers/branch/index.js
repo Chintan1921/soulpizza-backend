@@ -33,4 +33,6 @@ router.patch("/updateOrderPickupTime/:id", orderController.updatePickupTime);
 router.get("/cities", storeController.getCities);
 router.get("/states", storeController.getStates);
 
+router.get("/orders/:id/mark-printed", orderController.markOrderAsPrinted);
+
 module.exports = router;
