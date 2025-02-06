@@ -75,5 +75,7 @@ router.post("/favorite", favoriteController.addFavorite);
 router.delete("/favorite/:storeProductId", favoriteController.cancelFavorite);
 
 router.post("/contactUs", contactUsController.contactUsEmail);
+router.get("/stripe-success", orderController.handleStripeSuccess);
+
 
 module.exports = router;

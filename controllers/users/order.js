@@ -11,6 +11,7 @@ const {
   sendOrderConfirmationEmail,
 } = require("../../lib/helper");
 const dayjs = require("dayjs");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const placeOrder = async (req, res, next) => {
   try {
@@ -210,9 +211,9 @@ const placeOrder = async (req, res, next) => {
     // console.log("orderItems", orderItems);
     // let savedOrderItem = await OrderItem.bulkCreate(orderItems);
     // console.log("savedOrderItem", savedOrderItem);
-    // await CartItem.destroy({
-    //   where: { user_id: req.user.id },
-    // });
+    await CartItem.destroy({
+      where: { user_id: req.user.id },
+    });
     console.log("total", total);
     orderData.amount = total;
     orderData.tax = total - total / ((store.tax + 100) / 100);
@@ -386,9 +387,46 @@ const getOrderDetail = async (req, res, next) => {
   }
 };
 
+const handleStripeSuccess = async (req, res, next) => {
+  try {
+    const { session_id } = req.query;
+
+    // Verify the payment was successful with Stripe
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    
+    if (session.payment_status === 'paid') {
+      // Clear the cart for the user
+      await CartItem.destroy({
+        where: { user_id: session.metadata.userId }
+      });
+
+      // Update order status if needed
+      await Order.update(
+        { 
+          payment_status: 'paid',
+          status: 'in-progress'
+        },
+        {
+          where: { 
+            stripe_session_id: session_id
+          }
+        }
+      );
+
+      res.redirect(`${process.env.FRONTEND_URL}/order-success`);  // Redirect to success page
+    } else {
+      throw new Error('Payment was not successful');
+    }
+  } catch (error) {
+    console.error('Error handling stripe success:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/order-failed`);  // Redirect to failure page
+  }
+};
+
 module.exports = {
   placeOrder,
   getOrders,
   getOrderDetail,
   deliveryTimeCheck,
+  handleStripeSuccess,
 };

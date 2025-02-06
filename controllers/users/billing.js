@@ -156,8 +156,8 @@ const billing = async (req, res, next) => {
     console.log(lineItems[lineItems.length - 1], "Total");
 
     // Step 2: Create a transaction record in your database
-    // const successUrl = `http://localhost:3000/cart?order-paced=${deliveryType}&transaction_id={CHECKOUT_SESSION_ID}`;
-    // const cancelUrl = "http://localhost:3000/cart";
+    // const successUrl = `http://localhost:3001/order-paced?order_type=${deliveryType}&transaction_id={CHECKOUT_SESSION_ID}`;
+    // const cancelUrl = "http://localhost:3001/cart";
     const successUrl = `https://soulpizza.co.nz/order-paced?order_type=${deliveryType}&transaction_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = "https://soulpizza.co.nz/cart";
 
@@ -168,7 +168,8 @@ const billing = async (req, res, next) => {
       lineItems,
       successUrl,
       cancelUrl,
-      deliveryCharge
+      deliveryCharge,
+      req.user.id
     );
     await Transaction.create({
       user_id: req.user.id,
