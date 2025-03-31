@@ -211,6 +211,9 @@ const getNewOrders = async (req, res, next) => {
 
     const updatedOrders = await Promise.all(
       orders.map(async (order) => {
+        order.dataValues.instruction = order?.orderItems[0]?.instruction;
+        order.dataValues.size = order?.orderItems[0]?.size;
+        order.dataValues.crust_type = order?.orderItems[0]?.crust_type;
         // Wait for all orderItems to be processed
         order.orderItems = await Promise.all(
           order.orderItems.map(async (orderItem) => {
