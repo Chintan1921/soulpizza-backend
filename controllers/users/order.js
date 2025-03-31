@@ -132,6 +132,7 @@ const placeOrder = async (req, res, next) => {
           createdAt: order.createdAt,
           comboDeal: item?.comboItems?.length > 0 ? true : false,
           comboItems: item?.comboItems,
+          instruction: item?.instruction,
         },
         product = item.product,
         category = product?.productCategory?.name,

@@ -5,6 +5,7 @@ const moment = require("moment");
 
 const OrderItem = require("../../models/orderItem");
 const Product = require("../../models/product");
+const User = require("../../models/user");
 
 const getOrders = async (req, res, next) => {
   try {
@@ -25,7 +26,11 @@ const getOrders = async (req, res, next) => {
 
     const { rows: orders, count: total } = await Order.findAndCountAll({
       include: [
-        "user",
+        {
+          model: User,
+          as: "user",
+          attributes: { exclude: ["password", "createdAt", "updatedAt"] },
+        },
         {
           model: OrderItem,
           as: "orderItems",
@@ -96,6 +101,7 @@ const getOrders = async (req, res, next) => {
     });
     return;
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };

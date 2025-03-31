@@ -80,6 +80,15 @@ const Order = sequelize.define(
       allowNull: true,
       defaultValue: false,
     },
+    instruction: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    is_paid: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
+    },
   },
   {
     timestamps: true,

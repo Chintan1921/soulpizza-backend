@@ -74,6 +74,15 @@ const OrderItem = sequelize.define(
       defaultValue: [],
       allowNull: true,
     },
+    instruction: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    is_paid: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
+    },
   },
   {
     timestamps: true,
