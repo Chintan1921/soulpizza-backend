@@ -31,6 +31,10 @@ const Order = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    customer_phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     payment_type: {
       type: DataTypes.STRING,
       allowNull: true,

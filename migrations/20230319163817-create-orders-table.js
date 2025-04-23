@@ -33,6 +33,10 @@ module.exports = {
         type: Sequelize.DataTypes.STRING,
         allowNull: true,
       },
+      customer_phone: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: true,
+      },
       address: {
         type: Sequelize.DataTypes.STRING,
         allowNull: true,
